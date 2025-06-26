@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, Filter, Shirt, Edit2, Check, X } from "lucide-react";
+import { ArrowLeft, Upload, Filter, Shirt, Edit2, Check, X, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { removeBackground, loadImage } from "@/utils/aiUtils";
 
@@ -148,6 +148,15 @@ const Wardrobe = () => {
     setNewCategory("");
   };
 
+  const deleteItem = (itemId: string) => {
+    const updatedItems = items.filter(item => item.id !== itemId);
+    saveItems(updatedItems);
+    toast({
+      title: "Item deleted",
+      description: "Item has been removed from your wardrobe.",
+    });
+  };
+
   const filteredItems = items.filter(item => {
     const categoryMatch = filterCategory === "all" || item.category === filterCategory;
     const colorMatch = filterColor === "all" || item.color === filterColor;
@@ -187,15 +196,172 @@ const Wardrobe = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Upload Section */}
-        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-navy-200">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className="flex-1">
-                <Label htmlFor="image-upload" className="text-lg font-semibold text-navy-700 mb-2 block">
-                  Upload Clothing Item
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Filters */}
+            <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center space-x-2">
+                    <Filter className="w-4 h-4 text-navy-600" />
+                    <span className="font-semibold text-navy-700">Filters:</span>
+                  </div>
+                  
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          <span className="capitalize">{category}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={filterColor} onValueChange={setFilterColor}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Colors</SelectItem>
+                      {colors.map(color => (
+                        <SelectItem key={color} value={color}>
+                          <div className="flex items-center space-x-2">
+                            <div 
+                              className={`w-3 h-3 rounded-full border`}
+                              style={{ backgroundColor: color === 'white' ? '#ffffff' : color }}
+                            />
+                            <span className="capitalize">{color}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Items Grid */}
+            {filteredItems.length === 0 ? (
+              <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
+                <CardContent className="p-12 text-center">
+                  <Shirt className="w-16 h-16 text-navy-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-navy-700 mb-2">No items found</h3>
+                  <p className="text-navy-600">Upload your first clothing item to get started!</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {categories.map(category => (
+                  groupedItems[category].length > 0 && (
+                    <Card key={category} className="bg-white/80 backdrop-blur-sm border-navy-200">
+                      <CardContent className="p-4">
+                        <h3 className="text-lg font-bold text-navy-800 mb-4 capitalize">
+                          {category} ({groupedItems[category].length})
+                        </h3>
+                        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                          {groupedItems[category].map(item => (
+                            <div key={item.id} className="group relative">
+                              <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 transform">
+                                <CardContent className="p-0">
+                                  <div className="relative">
+                                    <img 
+                                      src={item.imageUrl} 
+                                      alt={`${item.color} ${item.category}`}
+                                      className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-300"
+                                    />
+                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => deleteItem(item.id)}
+                                        className="p-1 h-auto text-red-500 hover:text-red-700 hover:bg-red-50 bg-white/80"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="p-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="flex items-center space-x-1">
+                                        <div 
+                                          className="w-2 h-2 rounded-full border"
+                                          style={{ backgroundColor: item.color === 'white' ? '#ffffff' : item.color }}
+                                        />
+                                        <span className="text-xs text-navy-600 capitalize truncate">{item.color}</span>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleCategoryEdit(item.id, item.category)}
+                                        className="p-0.5 h-auto text-navy-600 hover:text-navy-800"
+                                      >
+                                        <Edit2 className="w-2.5 h-2.5" />
+                                      </Button>
+                                    </div>
+                                    
+                                    {editingCategory === item.id ? (
+                                      <div className="space-y-1">
+                                        <Select value={newCategory} onValueChange={setNewCategory}>
+                                          <SelectTrigger className="h-6 text-xs">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {categories.map(cat => (
+                                              <SelectItem key={cat} value={cat}>
+                                                <span className="capitalize">{cat}</span>
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <div className="flex space-x-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => saveCategoryEdit(item.id)}
+                                            className="p-0.5 h-auto text-green-500 hover:text-green-600"
+                                          >
+                                            <Check className="w-2.5 h-2.5" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={cancelCategoryEdit}
+                                            className="p-0.5 h-auto text-red-500 hover:text-red-600"
+                                          >
+                                            <X className="w-2.5 h-2.5" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-navy-600 capitalize truncate">{item.category}</p>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Upload Section - Right Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="bg-white/80 backdrop-blur-sm border-navy-200 sticky top-6">
+              <CardContent className="p-4">
+                <Label htmlFor="image-upload" className="text-lg font-semibold text-navy-700 mb-3 block">
+                  Add Item
                 </Label>
-                <div className="border-2 border-dashed border-navy-300 rounded-lg p-6 text-center hover:border-navy-400 transition-colors">
+                <div className="border-2 border-dashed border-navy-300 rounded-lg p-4 text-center hover:border-navy-400 transition-colors mb-4">
                   <Input
                     id="image-upload"
                     type="file"
@@ -205,213 +371,71 @@ const Wardrobe = () => {
                     className="hidden"
                   />
                   <Label htmlFor="image-upload" className="cursor-pointer">
-                    <Upload className="w-8 h-8 text-navy-600 mx-auto mb-2" />
-                    <p className="text-navy-600">
-                      {isUploading ? "Processing..." : "Click to upload an image"}
+                    <Upload className="w-6 h-6 text-navy-600 mx-auto mb-2" />
+                    <p className="text-sm text-navy-600">
+                      {isUploading ? "Processing..." : "Upload Image"}
                     </p>
                   </Label>
                 </div>
-              </div>
 
-              {pendingItem && (
-                <div className="flex-1 bg-navy-50/50 rounded-lg p-4">
-                  <h3 className="font-semibold mb-4 text-navy-700">Confirm Item Details:</h3>
-                  <img 
-                    src={pendingItem.imageUrl} 
-                    alt="Processed item" 
-                    className="w-32 h-32 object-cover rounded-lg mb-4 mx-auto"
-                  />
-                  
+                {pendingItem && (
                   <div className="space-y-4">
-                    <div>
-                      <Label className="text-navy-700">Category:</Label>
-                      <Select value={pendingItem.category} onValueChange={(value) => setPendingItem({...pendingItem, category: value})}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map(category => (
-                            <SelectItem key={category} value={category}>
-                              <span className="capitalize">{category}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <h3 className="font-semibold text-navy-700">Confirm Details:</h3>
+                    <img 
+                      src={pendingItem.imageUrl} 
+                      alt="Processed item" 
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
                     
-                    <div>
-                      <Label htmlFor="color-select" className="text-navy-700">Select Color:</Label>
-                      <Select value={selectedColor} onValueChange={setSelectedColor}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose color" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {colors.map(color => (
-                            <SelectItem key={color} value={color}>
-                              <div className="flex items-center space-x-2">
-                                <div 
-                                  className={`w-4 h-4 rounded-full border`}
-                                  style={{ backgroundColor: color === 'white' ? '#ffffff' : color }}
-                                />
-                                <span className="capitalize">{color}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <Button onClick={handleSaveItem} className="w-full bg-navy-600 hover:bg-navy-700">
-                      Add to Wardrobe
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Filters */}
-        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-navy-200">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center space-x-2">
-                <Filter className="w-4 h-4 text-navy-600" />
-                <span className="font-semibold text-navy-700">Filters:</span>
-              </div>
-              
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      <span className="capitalize">{category}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={filterColor} onValueChange={setFilterColor}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Colors</SelectItem>
-                  {colors.map(color => (
-                    <SelectItem key={color} value={color}>
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className={`w-4 h-4 rounded-full border`}
-                          style={{ backgroundColor: color === 'white' ? '#ffffff' : color }}
-                        />
-                        <span className="capitalize">{color}</span>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-navy-700 text-sm">Category:</Label>
+                        <Select value={pendingItem.category} onValueChange={(value) => setPendingItem({...pendingItem, category: value})}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map(category => (
+                              <SelectItem key={category} value={category}>
+                                <span className="capitalize">{category}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Items by Category (Rows) */}
-        {filteredItems.length === 0 ? (
-          <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
-            <CardContent className="p-12 text-center">
-              <Shirt className="w-16 h-16 text-navy-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-navy-700 mb-2">No items found</h3>
-              <p className="text-navy-600">Upload your first clothing item to get started!</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-8">
-            {categories.map(category => (
-              groupedItems[category].length > 0 && (
-                <Card key={category} className="bg-white/80 backdrop-blur-sm border-navy-200">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-navy-800 mb-4 capitalize">
-                      {category} ({groupedItems[category].length})
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                      {groupedItems[category].map(item => (
-                        <div key={item.id} className="group">
-                          <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 transform">
-                            <CardContent className="p-0">
-                              <img 
-                                src={item.imageUrl} 
-                                alt={`${item.color} ${item.category}`}
-                                className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                              <div className="p-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <div 
-                                      className="w-3 h-3 rounded-full border"
-                                      style={{ backgroundColor: item.color === 'white' ? '#ffffff' : item.color }}
-                                    />
-                                    <span className="text-xs text-navy-600 capitalize">{item.color}</span>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleCategoryEdit(item.id, item.category)}
-                                    className="p-1 h-auto text-navy-600 hover:text-navy-800"
-                                  >
-                                    <Edit2 className="w-3 h-3" />
-                                  </Button>
+                      
+                      <div>
+                        <Label className="text-navy-700 text-sm">Color:</Label>
+                        <Select value={selectedColor} onValueChange={setSelectedColor}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Choose color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {colors.map(color => (
+                              <SelectItem key={color} value={color}>
+                                <div className="flex items-center space-x-2">
+                                  <div 
+                                    className={`w-3 h-3 rounded-full border`}
+                                    style={{ backgroundColor: color === 'white' ? '#ffffff' : color }}
+                                  />
+                                  <span className="capitalize">{color}</span>
                                 </div>
-                                
-                                {editingCategory === item.id ? (
-                                  <div className="mt-2 space-y-2">
-                                    <Select value={newCategory} onValueChange={setNewCategory}>
-                                      <SelectTrigger className="h-8 text-xs">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {categories.map(cat => (
-                                          <SelectItem key={cat} value={cat}>
-                                            <span className="capitalize">{cat}</span>
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <div className="flex space-x-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => saveCategoryEdit(item.id)}
-                                        className="p-1 h-auto text-green-500 hover:text-green-600"
-                                      >
-                                        <Check className="w-3 h-3" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={cancelCategoryEdit}
-                                        className="p-1 h-auto text-red-500 hover:text-red-600"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-navy-600 capitalize mt-1">{item.category}</p>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      ))}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <Button onClick={handleSaveItem} className="w-full bg-navy-600 hover:bg-navy-700 text-sm py-2">
+                        Add to Wardrobe
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              )
-            ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
