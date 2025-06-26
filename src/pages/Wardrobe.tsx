@@ -160,27 +160,27 @@ const Wardrobe = () => {
   }, {} as Record<string, ClothingItem[]>);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
-      <div className="bg-white/60 backdrop-blur-sm border-b border-rose-100 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-navy-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button 
               onClick={() => window.location.href = '/dashboard'}
               variant="ghost"
               size="sm"
-              className="text-rose-500 hover:bg-rose-50"
+              className="text-navy-600 hover:bg-navy-50"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
             <div className="flex items-center space-x-2">
-              <Shirt className="w-6 h-6 text-rose-400" />
-              <h1 className="text-2xl font-bold text-rose-600">My Wardrobe</h1>
+              <Shirt className="w-6 h-6 text-navy-600" />
+              <h1 className="text-2xl font-bold text-navy-800">My Wardrobe</h1>
             </div>
           </div>
           
-          <div className="text-sm text-rose-400">
+          <div className="text-sm text-navy-600">
             {items.length} items total
           </div>
         </div>
@@ -188,14 +188,14 @@ const Wardrobe = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Upload Section */}
-        <Card className="mb-8 bg-white/60 backdrop-blur-sm border-rose-100">
+        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-navy-200">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-6 items-start">
               <div className="flex-1">
-                <Label htmlFor="image-upload" className="text-lg font-semibold text-rose-600 mb-2 block">
+                <Label htmlFor="image-upload" className="text-lg font-semibold text-navy-700 mb-2 block">
                   Upload Clothing Item
                 </Label>
-                <div className="border-2 border-dashed border-rose-200 rounded-lg p-6 text-center hover:border-rose-300 transition-colors">
+                <div className="border-2 border-dashed border-navy-300 rounded-lg p-6 text-center hover:border-navy-400 transition-colors">
                   <Input
                     id="image-upload"
                     type="file"
@@ -205,8 +205,8 @@ const Wardrobe = () => {
                     className="hidden"
                   />
                   <Label htmlFor="image-upload" className="cursor-pointer">
-                    <Upload className="w-8 h-8 text-rose-400 mx-auto mb-2" />
-                    <p className="text-rose-400">
+                    <Upload className="w-8 h-8 text-navy-600 mx-auto mb-2" />
+                    <p className="text-navy-600">
                       {isUploading ? "Processing..." : "Click to upload an image"}
                     </p>
                   </Label>
@@ -214,8 +214,8 @@ const Wardrobe = () => {
               </div>
 
               {pendingItem && (
-                <div className="flex-1 bg-rose-50/50 rounded-lg p-4">
-                  <h3 className="font-semibold mb-4 text-rose-600">Confirm Item Details:</h3>
+                <div className="flex-1 bg-navy-50/50 rounded-lg p-4">
+                  <h3 className="font-semibold mb-4 text-navy-700">Confirm Item Details:</h3>
                   <img 
                     src={pendingItem.imageUrl} 
                     alt="Processed item" 
@@ -224,7 +224,7 @@ const Wardrobe = () => {
                   
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-rose-600">Category:</Label>
+                      <Label className="text-navy-700">Category:</Label>
                       <Select value={pendingItem.category} onValueChange={(value) => setPendingItem({...pendingItem, category: value})}>
                         <SelectTrigger>
                           <SelectValue />
@@ -240,7 +240,7 @@ const Wardrobe = () => {
                     </div>
                     
                     <div>
-                      <Label htmlFor="color-select" className="text-rose-600">Select Color:</Label>
+                      <Label htmlFor="color-select" className="text-navy-700">Select Color:</Label>
                       <Select value={selectedColor} onValueChange={setSelectedColor}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choose color" />
@@ -261,7 +261,7 @@ const Wardrobe = () => {
                       </Select>
                     </div>
                     
-                    <Button onClick={handleSaveItem} className="w-full bg-rose-400 hover:bg-rose-500">
+                    <Button onClick={handleSaveItem} className="w-full bg-navy-600 hover:bg-navy-700">
                       Add to Wardrobe
                     </Button>
                   </div>
@@ -272,12 +272,12 @@ const Wardrobe = () => {
         </Card>
 
         {/* Filters */}
-        <Card className="mb-8 bg-white/60 backdrop-blur-sm border-rose-100">
+        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-navy-200">
           <CardContent className="p-6">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center space-x-2">
-                <Filter className="w-4 h-4 text-rose-400" />
-                <span className="font-semibold text-rose-600">Filters:</span>
+                <Filter className="w-4 h-4 text-navy-600" />
+                <span className="font-semibold text-navy-700">Filters:</span>
               </div>
               
               <Select value={filterCategory} onValueChange={setFilterCategory}>
@@ -319,20 +319,20 @@ const Wardrobe = () => {
 
         {/* Items by Category (Rows) */}
         {filteredItems.length === 0 ? (
-          <Card className="bg-white/60 backdrop-blur-sm border-rose-100">
+          <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
             <CardContent className="p-12 text-center">
-              <Shirt className="w-16 h-16 text-rose-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-rose-500 mb-2">No items found</h3>
-              <p className="text-rose-400">Upload your first clothing item to get started!</p>
+              <Shirt className="w-16 h-16 text-navy-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-navy-700 mb-2">No items found</h3>
+              <p className="text-navy-600">Upload your first clothing item to get started!</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-8">
             {categories.map(category => (
               groupedItems[category].length > 0 && (
-                <Card key={category} className="bg-white/60 backdrop-blur-sm border-rose-100">
+                <Card key={category} className="bg-white/80 backdrop-blur-sm border-navy-200">
                   <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-rose-600 mb-4 capitalize">
+                    <h3 className="text-xl font-bold text-navy-800 mb-4 capitalize">
                       {category} ({groupedItems[category].length})
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
@@ -352,13 +352,13 @@ const Wardrobe = () => {
                                       className="w-3 h-3 rounded-full border"
                                       style={{ backgroundColor: item.color === 'white' ? '#ffffff' : item.color }}
                                     />
-                                    <span className="text-xs text-rose-500 capitalize">{item.color}</span>
+                                    <span className="text-xs text-navy-600 capitalize">{item.color}</span>
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleCategoryEdit(item.id, item.category)}
-                                    className="p-1 h-auto text-rose-400 hover:text-rose-600"
+                                    className="p-1 h-auto text-navy-600 hover:text-navy-800"
                                   >
                                     <Edit2 className="w-3 h-3" />
                                   </Button>
@@ -398,7 +398,7 @@ const Wardrobe = () => {
                                     </div>
                                   </div>
                                 ) : (
-                                  <p className="text-xs text-rose-400 capitalize mt-1">{item.category}</p>
+                                  <p className="text-xs text-navy-600 capitalize mt-1">{item.category}</p>
                                 )}
                               </div>
                             </CardContent>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,32 +97,32 @@ const StyleOutfit = () => {
   const filteredWardrobe = wardrobe.filter(item => item.category === currentCategory);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
-      <div className="bg-white/60 backdrop-blur-sm border-b border-rose-100 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-navy-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button 
               onClick={() => window.location.href = '/dashboard'}
               variant="ghost"
               size="sm"
-              className="text-rose-500 hover:bg-rose-50"
+              className="text-navy-600 hover:bg-navy-50"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
-            <h1 className="text-2xl font-bold text-rose-600">Style Your Outfit</h1>
+            <h1 className="text-2xl font-bold text-navy-800">Style Your Outfit</h1>
           </div>
           
           <div className="flex items-center space-x-2">
-            <Label htmlFor="outfit-name" className="text-sm text-rose-500">Outfit Name:</Label>
+            <Label htmlFor="outfit-name" className="text-sm text-navy-600">Outfit Name:</Label>
             <input
               type="text"
               id="outfit-name"
               placeholder="Enter outfit name"
               value={outfitName}
               onChange={(e) => setOutfitName(e.target.value)}
-              className="bg-white/80 border border-rose-200 rounded-md px-3 py-1 text-sm text-rose-500 focus:ring-rose-400 focus:border-rose-400 outline-none"
+              className="bg-white/80 border border-navy-300 rounded-md px-3 py-1 text-sm text-navy-700 focus:ring-navy-400 focus:border-navy-400 outline-none"
             />
           </div>
         </div>
@@ -131,15 +132,15 @@ const StyleOutfit = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Wardrobe Section */}
-          <Card className="bg-white/60 backdrop-blur-sm border-rose-100">
+          <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xl font-bold text-rose-600 capitalize">{currentCategory}</CardTitle>
+              <CardTitle className="text-xl font-bold text-navy-800 capitalize">{currentCategory}</CardTitle>
               <div className="flex items-center space-x-2">
                 <Button 
                   onClick={() => setCurrentCategoryIndex(prev => (prev - 1 + categories.length) % categories.length)}
                   variant="outline"
                   size="icon"
-                  className="border-rose-200 hover:bg-rose-50 text-rose-500"
+                  className="border-navy-300 hover:bg-navy-50 text-navy-600"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -147,7 +148,7 @@ const StyleOutfit = () => {
                   onClick={() => setCurrentCategoryIndex(prev => (prev + 1) % categories.length)}
                   variant="outline"
                   size="icon"
-                  className="border-rose-200 hover:bg-rose-50 text-rose-500"
+                  className="border-navy-300 hover:bg-navy-50 text-navy-600"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -164,9 +165,9 @@ const StyleOutfit = () => {
                     <img 
                       src={item.imageUrl} 
                       alt={`${item.color} ${item.category}`}
-                      className="w-full h-32 object-cover rounded-md border border-rose-200"
+                      className="w-full h-32 object-cover rounded-md border border-navy-200"
                     />
-                    <div className="absolute inset-0 bg-black/20 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="absolute inset-0 bg-navy-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-sm font-semibold">
                         Add to Outfit
                       </div>
@@ -178,9 +179,9 @@ const StyleOutfit = () => {
           </Card>
 
           {/* Outfit Preview Section */}
-          <Card className="bg-white/60 backdrop-blur-sm border-rose-100">
+          <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-bold text-rose-600">Outfit Preview</CardTitle>
+              <CardTitle className="text-xl font-bold text-navy-800">Outfit Preview</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -190,32 +191,32 @@ const StyleOutfit = () => {
                       <img 
                         src={item.imageUrl} 
                         alt={`${item.color} ${item.category}`}
-                        className="w-20 h-20 object-cover rounded-md border border-rose-200"
+                        className="w-20 h-20 object-cover rounded-md border border-navy-200"
                       />
                       <div>
-                        <p className="text-lg font-semibold text-rose-600 capitalize">{item.category}</p>
-                        <p className="text-rose-400 capitalize">{item.color}</p>
+                        <p className="text-lg font-semibold text-navy-800 capitalize">{item.category}</p>
+                        <p className="text-navy-600 capitalize">{item.color}</p>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => removeItemFromOutfit(item.id, item.category)}
-                      className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2"
                     >
                       Remove
                     </Button>
                   </div>
                 ))}
                 {selectedItems.length === 0 && (
-                  <div className="text-center text-rose-400">
+                  <div className="text-center text-navy-600">
                     No items selected. Add items from the wardrobe to create your outfit.
                   </div>
                 )}
               </div>
               <Button 
                 onClick={saveOutfit}
-                className="w-full mt-6 bg-gradient-to-r from-rose-400 to-purple-400 hover:from-rose-500 hover:to-purple-500 text-white font-semibold py-3"
+                className="w-full mt-6 bg-gradient-to-r from-navy-600 to-blue-600 hover:from-navy-700 hover:to-blue-700 text-white font-semibold py-3"
                 disabled={selectedItems.length === 0}
               >
                 Save Outfit
