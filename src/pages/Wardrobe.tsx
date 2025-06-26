@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, Filter, Shirt, Edit2, Check, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, Filter, Shirt, Edit2, Check, X, Trash2, ChevronRight, ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { removeBackground, loadImage } from "@/utils/aiUtils";
 
@@ -20,6 +19,52 @@ interface ClothingItem {
 const categories = ["hat", "shortsleeve", "longsleeve", "outerwear", "pants", "shorts", "shoes"];
 const colors = ["black", "white", "red", "blue", "green", "yellow", "purple", "pink", "orange", "brown", "gray", "beige"];
 
+// Sample data for demonstration
+const sampleItems: ClothingItem[] = [
+  {
+    id: "1",
+    imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop",
+    category: "shortsleeve",
+    color: "white",
+    originalImage: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop"
+  },
+  {
+    id: "2",
+    imageUrl: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=300&fit=crop",
+    category: "shortsleeve",
+    color: "blue",
+    originalImage: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=300&fit=crop"
+  },
+  {
+    id: "3",
+    imageUrl: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=300&fit=crop",
+    category: "pants",
+    color: "blue",
+    originalImage: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=300&fit=crop"
+  },
+  {
+    id: "4",
+    imageUrl: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300&h=300&fit=crop",
+    category: "pants",
+    color: "black",
+    originalImage: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300&h=300&fit=crop"
+  },
+  {
+    id: "5",
+    imageUrl: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop",
+    category: "shoes",
+    color: "white",
+    originalImage: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop"
+  },
+  {
+    id: "6",
+    imageUrl: "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=300&h=300&fit=crop",
+    category: "longsleeve",
+    color: "gray",
+    originalImage: "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=300&h=300&fit=crop"
+  }
+];
+
 const Wardrobe = () => {
   const [items, setItems] = useState<ClothingItem[]>([]);
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -33,12 +78,19 @@ const Wardrobe = () => {
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState<string>("");
+  const [selectedItem, setSelectedItem] = useState<ClothingItem | null>(null);
+  const [pairWithCategory, setPairWithCategory] = useState<string>("");
+  const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     const savedItems = localStorage.getItem('wardrobe_items');
     if (savedItems) {
-      setItems(JSON.parse(savedItems));
+      const parsedItems = JSON.parse(savedItems);
+      setItems(parsedItems.length > 0 ? parsedItems : sampleItems);
+    } else {
+      setItems(sampleItems);
+      localStorage.setItem('wardrobe_items', JSON.stringify(sampleItems));
     }
   }, []);
 
@@ -157,6 +209,20 @@ const Wardrobe = () => {
     });
   };
 
+  const handleItemClick = (item: ClothingItem) => {
+    setSelectedItem(item);
+    setPairWithCategory("");
+    setCurrentOutfitIndex(0);
+  };
+
+  const getPairableCategories = (currentCategory: string) => {
+    return categories.filter(cat => cat !== currentCategory);
+  };
+
+  const getPairableItems = (category: string) => {
+    return items.filter(item => item.category === category);
+  };
+
   const filteredItems = items.filter(item => {
     const categoryMatch = filterCategory === "all" || item.category === filterCategory;
     const colorMatch = filterColor === "all" || item.color === filterColor;
@@ -167,6 +233,8 @@ const Wardrobe = () => {
     acc[category] = filteredItems.filter(item => item.category === category);
     return acc;
   }, {} as Record<string, ClothingItem[]>);
+
+  const pairableItems = pairWithCategory ? getPairableItems(pairWithCategory) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -196,9 +264,9 @@ const Wardrobe = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className={`${selectedItem ? 'lg:col-span-2' : 'lg:col-span-4'} space-y-6`}>
             {/* Filters */}
             <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
               <CardContent className="p-4">
@@ -263,51 +331,60 @@ const Wardrobe = () => {
                         <h3 className="text-lg font-bold text-navy-800 mb-4 capitalize">
                           {category} ({groupedItems[category].length})
                         </h3>
-                        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                           {groupedItems[category].map(item => (
                             <div key={item.id} className="group relative">
-                              <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 transform">
+                              <Card 
+                                className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer"
+                                onClick={() => handleItemClick(item)}
+                              >
                                 <CardContent className="p-0">
                                   <div className="relative">
                                     <img 
                                       src={item.imageUrl} 
                                       alt={`${item.color} ${item.category}`}
-                                      className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-300"
+                                      className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
                                     />
                                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => deleteItem(item.id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          deleteItem(item.id);
+                                        }}
                                         className="p-1 h-auto text-red-500 hover:text-red-700 hover:bg-red-50 bg-white/80"
                                       >
                                         <Trash2 className="w-3 h-3" />
                                       </Button>
                                     </div>
                                   </div>
-                                  <div className="p-2">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <div className="flex items-center space-x-1">
+                                  <div className="p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center space-x-2">
                                         <div 
-                                          className="w-2 h-2 rounded-full border"
+                                          className="w-3 h-3 rounded-full border"
                                           style={{ backgroundColor: item.color === 'white' ? '#ffffff' : item.color }}
                                         />
-                                        <span className="text-xs text-navy-600 capitalize truncate">{item.color}</span>
+                                        <span className="text-sm text-navy-600 capitalize truncate">{item.color}</span>
                                       </div>
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => handleCategoryEdit(item.id, item.category)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCategoryEdit(item.id, item.category);
+                                        }}
                                         className="p-0.5 h-auto text-navy-600 hover:text-navy-800"
                                       >
-                                        <Edit2 className="w-2.5 h-2.5" />
+                                        <Edit2 className="w-3 h-3" />
                                       </Button>
                                     </div>
                                     
                                     {editingCategory === item.id ? (
-                                      <div className="space-y-1">
+                                      <div className="space-y-2">
                                         <Select value={newCategory} onValueChange={setNewCategory}>
-                                          <SelectTrigger className="h-6 text-xs">
+                                          <SelectTrigger className="h-8 text-xs">
                                             <SelectValue />
                                           </SelectTrigger>
                                           <SelectContent>
@@ -322,23 +399,29 @@ const Wardrobe = () => {
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => saveCategoryEdit(item.id)}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              saveCategoryEdit(item.id);
+                                            }}
                                             className="p-0.5 h-auto text-green-500 hover:text-green-600"
                                           >
-                                            <Check className="w-2.5 h-2.5" />
+                                            <Check className="w-3 h-3" />
                                           </Button>
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={cancelCategoryEdit}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              cancelCategoryEdit();
+                                            }}
                                             className="p-0.5 h-auto text-red-500 hover:text-red-600"
                                           >
-                                            <X className="w-2.5 h-2.5" />
+                                            <X className="w-3 h-3" />
                                           </Button>
                                         </div>
                                       </div>
                                     ) : (
-                                      <p className="text-xs text-navy-600 capitalize truncate">{item.category}</p>
+                                      <p className="text-sm text-navy-600 capitalize truncate">{item.category}</p>
                                     )}
                                   </div>
                                 </CardContent>
@@ -353,6 +436,117 @@ const Wardrobe = () => {
               </div>
             )}
           </div>
+
+          {/* Selected Item Details */}
+          {selectedItem && (
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-navy-800 mb-4">Item Details</h3>
+                  <div className="space-y-4">
+                    <img 
+                      src={selectedItem.imageUrl} 
+                      alt={`${selectedItem.color} ${selectedItem.category}`}
+                      className="w-full h-64 object-cover rounded-lg"
+                    />
+                    <div className="space-y-2">
+                      <p className="text-lg font-semibold text-navy-700 capitalize">{selectedItem.category}</p>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-4 h-4 rounded-full border"
+                          style={{ backgroundColor: selectedItem.color === 'white' ? '#ffffff' : selectedItem.color }}
+                        />
+                        <span className="text-navy-600 capitalize">{selectedItem.color}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label className="text-navy-700 font-semibold">Pair it with:</Label>
+                      <Select value={pairWithCategory} onValueChange={setPairWithCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose category to pair with" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getPairableCategories(selectedItem.category).map(category => (
+                            <SelectItem key={category} value={category}>
+                              <span className="capitalize">{category}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Outfit Combinations */}
+              {pairWithCategory && pairableItems.length > 0 && (
+                <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-navy-800">Outfit Combinations</h3>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentOutfitIndex(prev => Math.max(0, prev - 1))}
+                          disabled={currentOutfitIndex === 0}
+                          className="border-navy-300 hover:bg-navy-50"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <span className="text-sm text-navy-600">
+                          {currentOutfitIndex + 1} / {pairableItems.length}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentOutfitIndex(prev => Math.min(pairableItems.length - 1, prev + 1))}
+                          disabled={currentOutfitIndex === pairableItems.length - 1}
+                          className="border-navy-300 hover:bg-navy-50"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <img 
+                            src={selectedItem.imageUrl} 
+                            alt={`${selectedItem.color} ${selectedItem.category}`}
+                            className="w-full h-32 object-cover rounded-lg mb-2"
+                          />
+                          <p className="text-sm text-navy-600 capitalize">{selectedItem.category}</p>
+                        </div>
+                        <div className="text-center">
+                          <img 
+                            src={pairableItems[currentOutfitIndex]?.imageUrl} 
+                            alt={`${pairableItems[currentOutfitIndex]?.color} ${pairableItems[currentOutfitIndex]?.category}`}
+                            className="w-full h-32 object-cover rounded-lg mb-2"
+                          />
+                          <p className="text-sm text-navy-600 capitalize">{pairableItems[currentOutfitIndex]?.category}</p>
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        className="w-full bg-navy-600 hover:bg-navy-700"
+                        onClick={() => {
+                          toast({
+                            title: "Outfit saved!",
+                            description: "This outfit combination has been saved to your collection.",
+                          });
+                        }}
+                      >
+                        Save This Outfit
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
 
           {/* Upload Section - Right Sidebar */}
           <div className="lg:col-span-1">
