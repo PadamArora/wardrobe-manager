@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, Filter, Shirt, Edit2, Check, X, Trash2, ChevronRight, ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { removeBackground, loadImage } from "@/utils/aiUtils";
 
 interface ClothingItem {
   id: string;
@@ -15,55 +14,6 @@ interface ClothingItem {
   color: string;
   originalImage: string;
 }
-
-const categories = ["hat", "shortsleeve", "longsleeve", "outerwear", "pants", "shorts", "shoes"];
-const colors = ["black", "white", "red", "blue", "green", "yellow", "purple", "pink", "orange", "brown", "gray", "beige"];
-
-// Sample data for demonstration
-const sampleItems: ClothingItem[] = [
-  {
-    id: "1",
-    imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop",
-    category: "shortsleeve",
-    color: "white",
-    originalImage: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop"
-  },
-  {
-    id: "2",
-    imageUrl: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=300&fit=crop",
-    category: "shortsleeve",
-    color: "blue",
-    originalImage: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=300&fit=crop"
-  },
-  {
-    id: "3",
-    imageUrl: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=300&fit=crop",
-    category: "pants",
-    color: "blue",
-    originalImage: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300&h=300&fit=crop"
-  },
-  {
-    id: "4",
-    imageUrl: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300&h=300&fit=crop",
-    category: "pants",
-    color: "black",
-    originalImage: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300&h=300&fit=crop"
-  },
-  {
-    id: "5",
-    imageUrl: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop",
-    category: "shoes",
-    color: "white",
-    originalImage: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop"
-  },
-  {
-    id: "6",
-    imageUrl: "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=300&h=300&fit=crop",
-    category: "longsleeve",
-    color: "gray",
-    originalImage: "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=300&h=300&fit=crop"
-  }
-];
 
 const Wardrobe = () => {
   const [items, setItems] = useState<ClothingItem[]>([]);
@@ -83,14 +33,14 @@ const Wardrobe = () => {
   const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
   const { toast } = useToast();
 
+  const categories = ["at", "shortsleeve", "longsleeve", "outerwear", "pants", "shorts", "shoes"];
+  const colors = ["black", "white", "red", "blue", "green", "yellow", "purple", "pink", "orange", "brown", "gray", "beige"];
+
   useEffect(() => {
     const savedItems = localStorage.getItem('wardrobe_items');
     if (savedItems) {
       const parsedItems = JSON.parse(savedItems);
-      setItems(parsedItems.length > 0 ? parsedItems : sampleItems);
-    } else {
-      setItems(sampleItems);
-      localStorage.setItem('wardrobe_items', JSON.stringify(sampleItems));
+      setItems(parsedItems);
     }
   }, []);
 
@@ -104,23 +54,32 @@ const Wardrobe = () => {
     if (!file) return;
 
     setIsUploading(true);
-    
+
     try {
       toast({
         title: "Processing image...",
-        description: "Removing background and analyzing the item.",
+        description: "Sending to backend for background removal and category prediction",
       });
 
-      const imageElement = await loadImage(file);
-      const backgroundRemovedBlob = await removeBackground(imageElement);
-      const processedImageUrl = URL.createObjectURL(backgroundRemovedBlob);
-      const originalImageUrl = URL.createObjectURL(file);
-      const predictedCategory = predictCategory(file.name);
-      
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("http://localhost:8000/process-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Backend error");
+
+      const result = await response.json();
+      console.log("result", result); // log this to verify
+
+      const processedImageUrl = `http://localhost:8000${result.image_path}`;
+
       setPendingItem({
         imageUrl: processedImageUrl,
-        originalImage: originalImageUrl,
-        category: predictedCategory
+        originalImage: URL.createObjectURL(file),
+        category: result.category || "shortsleeve",
       });
 
       toast({
@@ -128,7 +87,7 @@ const Wardrobe = () => {
         description: "Please select the color and confirm the category.",
       });
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error("Error processing image:", error);
       toast({
         title: "Processing failed",
         description: "There was an error processing your image. Please try again.",
@@ -137,18 +96,6 @@ const Wardrobe = () => {
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const predictCategory = (filename: string): string => {
-    const name = filename.toLowerCase();
-    if (name.includes('shoe') || name.includes('boot') || name.includes('sneaker')) return 'shoes';
-    if (name.includes('hat') || name.includes('cap') || name.includes('beanie')) return 'hat';
-    if (name.includes('pant') || name.includes('jean') || name.includes('trouser')) return 'pants';
-    if (name.includes('short')) return 'shorts';
-    if (name.includes('jacket') || name.includes('coat') || name.includes('hoodie')) return 'outerwear';
-    if (name.includes('tshirt') || name.includes('t-shirt')) return 'shortsleeve';
-    if (name.includes('longsleeve') || name.includes('sweater')) return 'longsleeve';
-    return 'shortsleeve';
   };
 
   const handleSaveItem = () => {
@@ -171,10 +118,10 @@ const Wardrobe = () => {
 
     const updatedItems = [...items, newItem];
     saveItems(updatedItems);
-    
+
     setPendingItem(null);
     setSelectedColor("");
-    
+
     toast({
       title: "Item added!",
       description: "Your clothing item has been added to your wardrobe.",
@@ -612,7 +559,7 @@ const Wardrobe = () => {
                       <img 
                         src={pendingItem.imageUrl} 
                         alt="Processed item" 
-                        className="w-full h-24 object-cover rounded-lg"
+                        className="w-full h-[300px] object-contain rounded-lg border"
                       />
                       
                       <div className="space-y-3">
