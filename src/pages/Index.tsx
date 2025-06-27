@@ -1,12 +1,28 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import AuthModal from "@/components/AuthModal";
 import { Sparkles, Shirt, Camera, Play } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check initial auth state
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -16,13 +32,21 @@ const Index = () => {
           <Shirt className="w-8 h-8 text-navy-600" />
           <span className="text-2xl font-bold text-navy-800">SmartWardrobe</span>
         </div>
-        {isLoggedIn && (
+        {isLoggedIn ? (
           <Button 
-            onClick={() => window.location.href = '/dashboard'} 
+            onClick={() => navigate('/dashboard')} 
             variant="outline"
             className="border-navy-200 hover:bg-navy-50 text-navy-600"
           >
             Dashboard
+          </Button>
+        ) : (
+          <Button 
+            onClick={() => navigate('/auth')} 
+            variant="outline"
+            className="border-navy-200 hover:bg-navy-50 text-navy-600"
+          >
+            Sign In
           </Button>
         )}
       </nav>
@@ -46,7 +70,7 @@ const Index = () => {
         
         <div className="flex flex-col sm:flex-row gap-6 items-center">
           <Button 
-            onClick={() => setShowAuthModal(true)}
+            onClick={() => navigate('/auth')}
             size="lg"
             className="bg-gradient-to-r from-navy-600 to-blue-600 hover:from-navy-700 hover:to-blue-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
           >
@@ -102,16 +126,6 @@ const Index = () => {
           </div>
         </div>
       </div>
-
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)}
-        onLoginSuccess={() => {
-          setIsLoggedIn(true);
-          setShowAuthModal(false);
-          window.location.href = '/dashboard';
-        }}
-      />
     </div>
   );
 };
