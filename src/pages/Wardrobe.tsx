@@ -423,9 +423,9 @@ const Wardrobe = () => {
                       variant="ghost"
                       size="sm"
                       onClick={closeItemView}
-                      className="text-navy-600 hover:text-navy-800"
+                      className="ml-[-48px] text-navy-600 hover:text-navy-800"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-5 h-5 text-navy-800 stroke-[2.5]" />
                     </Button>
                     <Button
                       variant="destructive"
