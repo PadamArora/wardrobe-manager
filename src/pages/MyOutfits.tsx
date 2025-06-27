@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Heart, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface ClothingItem {
   id: string;
@@ -17,135 +15,30 @@ interface ClothingItem {
 
 interface Outfit {
   id: string;
+  items: ClothingItem[];
   name: string;
   createdAt: string;
-  items: ClothingItem[];
 }
 
 const MyOutfits = () => {
   const [savedOutfits, setSavedOutfits] = useState<Outfit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/auth');
-        return;
-      }
-      setUser(session.user);
-      loadOutfits(session.user.id);
-    };
+    const outfits = JSON.parse(localStorage.getItem('saved_outfits') || '[]');
+    setSavedOutfits(outfits);
+  }, []);
 
-    getUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate('/auth');
-      } else {
-        setUser(session.user);
-        loadOutfits(session.user.id);
-      }
+  const deleteOutfit = (outfitId: string) => {
+    const updatedOutfits = savedOutfits.filter(outfit => outfit.id !== outfitId);
+    setSavedOutfits(updatedOutfits);
+    localStorage.setItem('saved_outfits', JSON.stringify(updatedOutfits));
+    
+    toast({
+      title: "Outfit deleted",
+      description: "The outfit has been removed from your collection.",
     });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const loadOutfits = async (userId: string) => {
-    try {
-      setLoading(true);
-      
-      // Get outfits with their items
-      const { data: outfits, error: outfitsError } = await supabase
-        .from('outfits')
-        .select(`
-          id,
-          name,
-          created_at,
-          outfit_items (
-            clothing_items (
-              id,
-              image_url,
-              category,
-              color,
-              original_image
-            )
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (outfitsError) {
-        console.error('Error loading outfits:', outfitsError);
-        toast({
-          title: "Error loading outfits",
-          description: "Failed to load your saved outfits.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const formattedOutfits = outfits.map(outfit => ({
-        id: outfit.id,
-        name: outfit.name,
-        createdAt: outfit.created_at,
-        items: outfit.outfit_items.map((item: any) => ({
-          id: item.clothing_items.id,
-          imageUrl: item.clothing_items.image_url,
-          category: item.clothing_items.category,
-          color: item.clothing_items.color,
-          originalImage: item.clothing_items.original_image
-        }))
-      }));
-
-      setSavedOutfits(formattedOutfits);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
   };
-
-  const deleteOutfit = async (outfitId: string) => {
-    try {
-      const { error } = await supabase
-        .from('outfits')
-        .delete()
-        .eq('id', outfitId);
-
-      if (error) {
-        console.error('Error deleting outfit:', error);
-        toast({
-          title: "Delete failed",
-          description: "Failed to delete the outfit.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setSavedOutfits(prev => prev.filter(outfit => outfit.id !== outfitId));
-      toast({
-        title: "Outfit deleted",
-        description: "The outfit has been removed from your collection.",
-      });
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <Heart className="w-12 h-12 text-navy-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-navy-600">Loading your outfits...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -179,10 +72,10 @@ const MyOutfits = () => {
               <h3 className="text-xl font-semibold text-navy-700 mb-2">No saved outfits yet</h3>
               <p className="text-navy-600 mb-6">Create and save your first outfit to see it here!</p>
               <Button 
-                onClick={() => window.location.href = '/wardrobe'}
+                onClick={() => window.location.href = '/style-outfit'}
                 className="bg-navy-600 hover:bg-navy-700 text-white"
               >
-                Go to Wardrobe
+                Style an Outfit
               </Button>
             </CardContent>
           </Card>

@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shirt, LogOut } from "lucide-react";
+import { Shirt, Sparkles, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -129,11 +129,11 @@ const Dashboard = () => {
             Your Fashion Command Center
           </h2>
           <p className="text-xl text-navy-600">
-            Organize your wardrobe and create amazing outfits
+            Organize your wardrobe and create amazing outfits with AI assistance
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {/* My Wardrobe Card */}
           <Card className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 bg-white/80 backdrop-blur-sm border-navy-200">
             <CardHeader className="text-center pb-4">
@@ -157,11 +157,34 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Style an Outfit Card */}
+          <Card className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 bg-white/80 backdrop-blur-sm border-navy-200">
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-xl font-bold text-navy-800 group-hover:text-blue-600 transition-colors">
+                Style an Outfit
+              </CardTitle>
+              <CardDescription className="text-navy-600 text-sm">
+                Get AI-powered outfit recommendations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Button 
+                onClick={() => window.location.href = '/style-outfit'}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3"
+              >
+                Style Outfits
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* My Outfits Card */}
           <Card className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 bg-white/80 backdrop-blur-sm border-navy-200">
             <CardHeader className="text-center pb-4">
               <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-navy-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Shirt className="w-8 h-8 text-white" />
+                <Sparkles className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-xl font-bold text-navy-800 group-hover:text-blue-600 transition-colors">
                 My Outfits
