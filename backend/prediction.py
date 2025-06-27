@@ -32,5 +32,6 @@ def predict_clothing_label(image):
         logits = outputs.logits
         prediction = torch.argmax(logits, dim=1).item()
 
+    print(model.config.id2label[prediction])
     return model.config.id2label[prediction]
 

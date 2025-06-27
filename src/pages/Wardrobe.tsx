@@ -17,6 +17,7 @@ interface ClothingItem {
 }
 
 const Wardrobe = () => {
+  const [isSaving, setIsSaving] = useState(false);
   const [showColorFilters, setShowColorFilters] = useState(false);
   const [items, setItems] = useState<ClothingItem[]>([]);
   const [filterCategory, setFilterCategory] = useState<string>("all");
@@ -37,6 +38,8 @@ const Wardrobe = () => {
 
   const categories = ["hat", "shortsleeve", "longsleeve", "outerwear", "pants", "shorts", "shoes"];
   const colors = ["black", "white", "red", "blue", "green", "yellow", "purple", "pink", "orange", "brown", "gray", "beige"];
+  
+  const toStatic = (url: string) => url.replace("http://localhost:8000", "");
 
   useEffect(() => {
     const savedItems = localStorage.getItem('wardrobe_items');
@@ -100,6 +103,62 @@ const Wardrobe = () => {
     }
   };
 
+  const handleSaveOutfit = async () => {
+    // Where is the “top” vs “bottom” coming from?
+    // → Whichever side the *selected* item belongs to.
+    if (!selectedItem || pairableItems.length === 0) return;
+  
+    const outfitName = prompt("Enter a name for this outfit:");
+    if (!outfitName) return;
+  
+    // Decide which image is the top and which the bottom
+    const topCategories = ["shortsleeve", "longsleeve", "outerwear", "hat"];
+    const isSelectedTop = topCategories.includes(selectedItem.category);
+  
+    const topImagePath = isSelectedTop
+      ? selectedItem.imageUrl
+      : pairableItems[currentOutfitIndex].imageUrl;
+  
+    const bottomImagePath = isSelectedTop
+      ? pairableItems[currentOutfitIndex].imageUrl
+      : selectedItem.imageUrl;
+  
+    try {
+      setIsSaving(true);
+  
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/save-outfit`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            outfit_name: outfitName.trim(),
+            top_image_path: toStatic(topImagePath),
+            bottom_image_path: toStatic(bottomImagePath),
+          }),
+        }
+      );
+  
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error || "Server error");
+      }
+  
+      toast({
+        title: "Outfit saved!",
+        description: `“${outfitName}” added to Saved Outfits.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Could not save outfit",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
   const handleSaveItem = () => {
     if (!pendingItem || !selectedColor) {
       toast({
@@ -149,14 +208,40 @@ const Wardrobe = () => {
     setNewCategory("");
   };
 
-  const deleteItem = (itemId: string) => {
-    const updatedItems = items.filter(item => item.id !== itemId);
-    saveItems(updatedItems);
-    toast({
-      title: "Item deleted",
-      description: "Item has been removed from your wardrobe.",
-    });
+  const deleteItem = async (itemId: string) => {
+    const itemToDelete = items.find(item => item.id === itemId);
+    if (!itemToDelete) return;
+  
+    try {
+      // 1. Request backend to delete the file
+      const response = await fetch("http://localhost:8000/delete-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_path: itemToDelete.imageUrl.replace("http://localhost:8000", "") })
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to delete image from backend");
+      }
+  
+      // 2. Remove from frontend state/localStorage
+      const updatedItems = items.filter(item => item.id !== itemId);
+      saveItems(updatedItems);
+  
+      toast({
+        title: "Item deleted",
+        description: "Item has been removed from your wardrobe.",
+      });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast({
+        title: "Delete failed",
+        description: "Could not delete item from server.",
+        variant: "destructive",
+      });
+    }
   };
+  
 
   const handleItemClick = (item: ClothingItem) => {
     setSelectedItem(item);
@@ -342,6 +427,18 @@ const Wardrobe = () => {
                     >
                       <X className="w-5 h-5" />
                     </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        deleteItem(selectedItem.id);
+                        closeItemView();
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete Item
+                    </Button>
+
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -350,7 +447,7 @@ const Wardrobe = () => {
                       <img 
                         src={selectedItem.imageUrl} 
                         alt={`${selectedItem.color} ${selectedItem.category}`}
-                        className="w-full h-80 object-cover rounded-lg shadow-lg"
+                        className="w-full h-80 object-contain rounded-lg shadow-lg bg-white"
                       />
                       <div className="space-y-3">
                         <p className="text-xl font-semibold text-navy-700 capitalize">{selectedItem.category}</p>
@@ -382,51 +479,80 @@ const Wardrobe = () => {
 
                     {/* Right: Outfit Combinations */}
                     {pairWithCategory && pairableItems.length > 0 && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-xl font-bold text-navy-800">Outfit Combinations</h3>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentOutfitIndex(prev => Math.max(0, prev - 1))}
-                              disabled={currentOutfitIndex === 0}
-                              className="border-navy-300 hover:bg-navy-50"
-                            >
-                              <ChevronLeft className="w-4 h-4" />
-                            </Button>
-                            <span className="text-sm text-navy-600">
-                              {currentOutfitIndex + 1} / {pairableItems.length}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentOutfitIndex(prev => Math.min(pairableItems.length - 1, prev + 1))}
-                              disabled={currentOutfitIndex === pairableItems.length - 1}
-                              className="border-navy-300 hover:bg-navy-50"
-                            >
-                              <ChevronRight className="w-4 h-4" />
-                            </Button>
+                      <div className="space-y-3">
+                        {/* title – nudged up a bit */}
+                        <h3 className="-mt-2 text-xl font-bold text-navy-800">
+                          Outfit Combinations
+                        </h3>
+
+                        {/* arrow + preview + arrow in one row */}
+                        <div className="flex items-center justify-center space-x-2">
+                          {/* ← prev */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              setCurrentOutfitIndex((prev) => Math.max(0, prev - 1))
+                            }
+                            disabled={currentOutfitIndex === 0}
+                          >
+                            <ChevronLeft className="w-5 h-5 text-indigo-600" />
+                          </Button>
+
+                          {/* outfit card */}
+                          <div className="flex flex-col items-center bg-white rounded-lg shadow-md w-60 py-1 px-1">
+                            {/* top garment */}
+                            <img
+                              src={
+                                ["shortsleeve", "longsleeve", "outerwear"].includes(
+                                  selectedItem.category
+                                )
+                                  ? selectedItem.imageUrl
+                                  : pairableItems[currentOutfitIndex]?.imageUrl
+                              }
+                              alt="Top"
+                              className="w-full h-56 object-contain"
+                            />
+                            {/* bottom garment */}
+                            <img
+                              src={
+                                ["pants"].includes(selectedItem.category)
+                                  ? selectedItem.imageUrl
+                                  : pairableItems[currentOutfitIndex]?.imageUrl
+                              }
+                              alt="Bottom"
+                              className="w-full h-64 object-contain -mt-5"
+                            />
                           </div>
+
+                          {/* → next */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              setCurrentOutfitIndex((prev) =>
+                                Math.min(pairableItems.length - 1, prev + 1)
+                              )
+                            }
+                            disabled={currentOutfitIndex === pairableItems.length - 1}
+                          >
+                            <ChevronRight className="w-5 h-5 text-indigo-600" />
+                          </Button>
                         </div>
-                        <div className="flex flex-col items-center bg-white rounded-lg shadow-md w-60 mx-auto py-1 px-1">
-                          <img 
-                            src={['shortsleeve', 'longsleeve', 'outerwear'].includes(selectedItem.category)
-                              ? selectedItem.imageUrl
-                              : pairableItems[currentOutfitIndex]?.imageUrl}
-                            alt="Top"
-                            className="w-full h-56 object-contain"
-                          />
-                          <img 
-                            src={['pants'].includes(selectedItem.category)
-                              ? selectedItem.imageUrl
-                              : pairableItems[currentOutfitIndex]?.imageUrl}
-                            alt="Bottom"
-                            className="w-full h-64 object-contain -mt-5"
-                          />
-                        </div>
+
+                        {/* save button – slightly closer to card */}
+                        <Button
+                          variant="secondary"
+                          size="default"
+                          onClick={handleSaveOutfit}
+                          disabled={isSaving}
+                          className="ml-36 text-base"
+                        >
+                          {isSaving ? "Saving…" : "Save Outfit"}
+                        </Button>
                       </div>
                     )}
+
                   </div>
                 </div>
               </div>
@@ -436,7 +562,7 @@ const Wardrobe = () => {
           {/* Upload Section - Right Sidebar */}
           {!selectedItem && (
             <div className="lg:col-span-1">
-              <Card className="bg-white/80 backdrop-blur-sm border-navy-200 sticky top-6 w-[240px] ml-auto">
+              <Card className="bg-white/80 backdrop-blur-sm border-navy-200 sticky top-6 w-[360px] max-w-full ml-auto">
                 <CardContent className="p-4">
                   <Label htmlFor="image-upload" className="text-lg font-semibold text-navy-700 mb-3 block">
                     Add Item
