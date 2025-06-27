@@ -42,18 +42,23 @@ async def process_image(file: UploadFile = File(...)):
         # 1. Remove background
         processed_image = remove_background_white(image)
 
-        # 2. Predict category
-        category = predict_clothing_label(temp_path).lower()
+        category = predict_clothing_label(temp_path).replace(" ", "").lower()
 
-        # 3. Save final image to static folder
+        # Create a subfolder based on predicted category
+        category_dir = os.path.join(STATIC_DIR, category)
+        os.makedirs(category_dir, exist_ok=True)
+
         output_filename = f"{uuid.uuid4().hex}_processed.jpg"
-        output_path = os.path.join(STATIC_DIR, output_filename)
-        processed_image.save(output_path)
+        output_path = os.path.join(category_dir, output_filename)
 
+        processed_image.save(output_path)
+        os.remove(temp_path)
+        
         return JSONResponse({
-            "image_path": f"/static/{output_filename}",
-            "category": category
+        "image_path": f"/static/{category}/{output_filename}",
+        "category": category
         })
+
 
     except Exception as e:
         return JSONResponse(

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Upload, Filter, Shirt, Edit2, Check, X, Trash2, ChevronRight, ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+
 interface ClothingItem {
   id: string;
   imageUrl: string;
@@ -16,6 +17,7 @@ interface ClothingItem {
 }
 
 const Wardrobe = () => {
+  const [showColorFilters, setShowColorFilters] = useState(false);
   const [items, setItems] = useState<ClothingItem[]>([]);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterColor, setFilterColor] = useState<string>("all");
@@ -33,7 +35,7 @@ const Wardrobe = () => {
   const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
   const { toast } = useToast();
 
-  const categories = ["at", "shortsleeve", "longsleeve", "outerwear", "pants", "shorts", "shoes"];
+  const categories = ["hat", "shortsleeve", "longsleeve", "outerwear", "pants", "shorts", "shoes"];
   const colors = ["black", "white", "red", "blue", "green", "yellow", "purple", "pink", "orange", "brown", "gray", "beige"];
 
   useEffect(() => {
@@ -79,7 +81,7 @@ const Wardrobe = () => {
       setPendingItem({
         imageUrl: processedImageUrl,
         originalImage: URL.createObjectURL(file),
-        category: result.category || "shortsleeve",
+        category: result.category?.toLowerCase() ?? "shortsleeve",
       });
 
       toast({
@@ -163,8 +165,13 @@ const Wardrobe = () => {
   };
 
   const getPairableCategories = (currentCategory: string) => {
+    if (["shortsleeve", "longsleeve"].includes(currentCategory)) {
+      return ["pants", "outerwear"];
+    } else if (currentCategory === "pants") {
+      return ["shortsleeve", "longsleeve", "outerwear"];
+    }
     return categories.filter(cat => cat !== currentCategory);
-  };
+  };  
 
   const getPairableItems = (category: string) => {
     return items.filter(item => item.category === category);
@@ -221,50 +228,58 @@ const Wardrobe = () => {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6 relative">
             {/* Filters */}
-            <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center space-x-2">
-                    <Filter className="w-4 h-4 text-navy-600" />
-                    <span className="font-semibold text-navy-700">Filters:</span>
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              {["all", ...categories].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setFilterCategory(cat)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+                    filterCategory === cat
+                      ? "bg-navy-600 text-white border-navy-600"
+                      : "bg-white text-navy-600 border-navy-300 hover:bg-navy-50"
+                  }`}
+                >
+                  {cat === "all" ? "All" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </button>
+              ))}
+
+              {/* Color Filter Toggle Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowColorFilters(!showColorFilters)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+                    filterColor !== "all"
+                      ? "bg-navy-600 text-white border-navy-600"
+                      : "bg-white text-navy-600 border-navy-300 hover:bg-navy-50"
+                  }`}
+                >
+                  Color
+                </button>
+
+                {/* Color Filter Pills */}
+                {showColorFilters && (
+                  <div className="absolute left-0 mt-2 z-10 bg-white p-3 rounded-lg shadow-lg border w-[280px] flex flex-wrap gap-2">
+                    {["all", ...colors].map(color => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          setFilterColor(color);
+                          setShowColorFilters(false);
+                        }}
+                        className={`px-3 py-1 rounded-full text-sm capitalize border ${
+                          filterColor === color
+                            ? "bg-navy-600 text-white border-navy-600"
+                            : "bg-white text-navy-600 border-navy-300 hover:bg-navy-50"
+                        }`}
+                      >
+                        {color}
+                      </button>
+                    ))}
                   </div>
-                  
-                  <Select value={filterCategory} onValueChange={setFilterCategory}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>
-                          <span className="capitalize">{category}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select value={filterColor} onValueChange={setFilterColor}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Colors</SelectItem>
-                      {colors.map(color => (
-                        <SelectItem key={color} value={color}>
-                          <div className="flex items-center space-x-2">
-                            <div 
-                              className={`w-3 h-3 rounded-full border`}
-                              style={{ backgroundColor: color === 'white' ? '#ffffff' : color }}
-                            />
-                            <span className="capitalize">{color}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </div>
+            </div>
+
 
             {/* Items Grid */}
             {filteredItems.length === 0 ? (
@@ -277,115 +292,39 @@ const Wardrobe = () => {
               </Card>
             ) : (
               <div className="space-y-6">
-                {categories.map(category => (
-                  groupedItems[category].length > 0 && (
-                    <Card key={category} className="bg-white/80 backdrop-blur-sm border-navy-200">
-                      <CardContent className="p-4">
-                        <h3 className="text-lg font-bold text-navy-800 mb-4 capitalize">
-                          {category} ({groupedItems[category].length})
-                        </h3>
-                        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                          {groupedItems[category].map(item => (
-                            <div key={item.id} className="group relative">
-                              <Card 
-                                className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer"
-                                onClick={() => handleItemClick(item)}
-                              >
-                                <CardContent className="p-0">
-                                  <div className="relative">
-                                    <img 
-                                      src={item.imageUrl} 
-                                      alt={`${item.color} ${item.category}`}
-                                      className="w-full h-24 object-cover group-hover:scale-110 transition-transform duration-300"
-                                    />
-                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          deleteItem(item.id);
-                                        }}
-                                        className="p-1 h-auto text-red-500 hover:text-red-700 hover:bg-red-50 bg-white/80"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  <div className="p-2">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <div className="flex items-center space-x-1">
-                                        <div 
-                                          className="w-2 h-2 rounded-full border"
-                                          style={{ backgroundColor: item.color === 'white' ? '#ffffff' : item.color }}
-                                        />
-                                        <span className="text-xs text-navy-600 capitalize truncate">{item.color}</span>
-                                      </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleCategoryEdit(item.id, item.category);
-                                        }}
-                                        className="p-0.5 h-auto text-navy-600 hover:text-navy-800"
-                                      >
-                                        <Edit2 className="w-2 h-2" />
-                                      </Button>
-                                    </div>
-                                    
-                                    {editingCategory === item.id ? (
-                                      <div className="space-y-1">
-                                        <Select value={newCategory} onValueChange={setNewCategory}>
-                                          <SelectTrigger className="h-6 text-xs">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {categories.map(cat => (
-                                              <SelectItem key={cat} value={cat}>
-                                                <span className="capitalize">{cat}</span>
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                        <div className="flex space-x-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              saveCategoryEdit(item.id);
-                                            }}
-                                            className="p-0.5 h-auto text-green-500 hover:text-green-600"
-                                          >
-                                            <Check className="w-2 h-2" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              cancelCategoryEdit();
-                                            }}
-                                            className="p-0.5 h-auto text-red-500 hover:text-red-600"
-                                          >
-                                            <X className="w-2 h-2" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <p className="text-xs text-navy-600 capitalize truncate">{item.category}</p>
-                                    )}
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                ))}
+                {filteredItems.length === 0 ? (
+                  <Card className="bg-white/80 backdrop-blur-sm border-navy-200">
+                    <CardContent className="p-12 text-center">
+                      <Shirt className="w-16 h-16 text-navy-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-navy-700 mb-2">No items found</h3>
+                      <p className="text-navy-600">Try uploading or changing the filter.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-6">
+                    {filteredItems.map((item, index) => (
+                      <Card
+                        key={item.id}
+                        className="hover:shadow-lg transition duration-300 cursor-pointer overflow-hidden"
+                        onClick={() => handleItemClick(item)}
+                      >
+                        <CardContent className="p-0">
+                        <img
+                          src={item.imageUrl}
+                          alt={`${item.color} ${item.category}`}
+                          className="w-full h-56 object-contain"
+                        />
+
+                          <div className="p-2">
+                          <p className="text-sm font-semibold text-navy-800 capitalize">{item.category}</p>
+                          <p className="text-xs text-navy-600 capitalize">{item.color}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
               </div>
             )}
 
@@ -470,55 +409,21 @@ const Wardrobe = () => {
                             </Button>
                           </div>
                         </div>
-                        
-                        <div className="space-y-4">
-                          {/* Top Item */}
-                          <div className="text-center">
-                            <img 
-                              src={['shortsleeve', 'longsleeve', 'outerwear', 'hat'].includes(selectedItem.category) 
-                                ? selectedItem.imageUrl 
-                                : pairableItems[currentOutfitIndex]?.imageUrl
-                              } 
-                              alt="Top item"
-                              className="w-40 h-32 object-cover rounded-lg mb-2 mx-auto shadow-md"
-                            />
-                            <p className="text-sm text-navy-600 capitalize">
-                              {['shortsleeve', 'longsleeve', 'outerwear', 'hat'].includes(selectedItem.category) 
-                                ? selectedItem.category 
-                                : pairableItems[currentOutfitIndex]?.category
-                              }
-                            </p>
-                          </div>
-                          
-                          {/* Bottom Item */}
-                          <div className="text-center">
-                            <img 
-                              src={['pants', 'shorts', 'shoes'].includes(selectedItem.category) 
-                                ? selectedItem.imageUrl 
-                                : pairableItems[currentOutfitIndex]?.imageUrl
-                              } 
-                              alt="Bottom item"
-                              className="w-40 h-32 object-cover rounded-lg mb-2 mx-auto shadow-md"
-                            />
-                            <p className="text-sm text-navy-600 capitalize">
-                              {['pants', 'shorts', 'shoes'].includes(selectedItem.category) 
-                                ? selectedItem.category 
-                                : pairableItems[currentOutfitIndex]?.category
-                              }  
-                            </p>
-                          </div>
-                          
-                          <Button 
-                            className="w-full bg-navy-600 hover:bg-navy-700 mt-4"
-                            onClick={() => {
-                              toast({
-                                title: "Outfit saved!",
-                                description: "This outfit combination has been saved to your collection.",
-                              });
-                            }}
-                          >
-                            Save This Outfit
-                          </Button>
+                        <div className="flex flex-col items-center bg-white rounded-lg shadow-md w-60 mx-auto py-1 px-1">
+                          <img 
+                            src={['shortsleeve', 'longsleeve', 'outerwear'].includes(selectedItem.category)
+                              ? selectedItem.imageUrl
+                              : pairableItems[currentOutfitIndex]?.imageUrl}
+                            alt="Top"
+                            className="w-full h-56 object-contain"
+                          />
+                          <img 
+                            src={['pants'].includes(selectedItem.category)
+                              ? selectedItem.imageUrl
+                              : pairableItems[currentOutfitIndex]?.imageUrl}
+                            alt="Bottom"
+                            className="w-full h-64 object-contain -mt-5"
+                          />
                         </div>
                       </div>
                     )}
@@ -531,7 +436,7 @@ const Wardrobe = () => {
           {/* Upload Section - Right Sidebar */}
           {!selectedItem && (
             <div className="lg:col-span-1">
-              <Card className="bg-white/80 backdrop-blur-sm border-navy-200 sticky top-6">
+              <Card className="bg-white/80 backdrop-blur-sm border-navy-200 sticky top-6 w-[240px] ml-auto">
                 <CardContent className="p-4">
                   <Label htmlFor="image-upload" className="text-lg font-semibold text-navy-700 mb-3 block">
                     Add Item
