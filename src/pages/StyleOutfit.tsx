@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import html2canvas from "html2canvas";
@@ -23,6 +23,34 @@ interface OutfitItems {
   accessory?: ClothingItem;
 }
 
+// Random placeholder images for demonstration
+const placeholderImages = {
+  top: [
+    "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=300&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=300&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=400&fit=crop",
+  ],
+  bottom: [
+    "https://images.unsplash.com/photo-1582418702059-97ebafb35ba8?w=300&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?w=300&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1565084888279-aca607ecce0c?w=300&h=400&fit=crop",
+  ],
+  shoes: [
+    "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1595950653106-6c9eac4d6b0c?w=300&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=300&h=300&fit=crop",
+    "https://images.unsplash.com/photo-1551107696-a4b57a0f9ff8?w=300&h=300&fit=crop",
+  ],
+  accessory: [
+    "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200&h=200&fit=crop",
+    "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=200&h=200&fit=crop",
+    "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=200&h=200&fit=crop",
+    "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=200&h=200&fit=crop",
+  ]
+};
+
 const categories = ["top", "bottom", "shoes", "accessory"];
 
 const StyleOutfit = () => {
@@ -31,12 +59,18 @@ const StyleOutfit = () => {
   const [outfitName, setOutfitName] = useState<string>("");
   const [draggedItem, setDraggedItem] = useState<ClothingItem | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [categoryIndices, setCategoryIndices] = useState<{[key: string]: number}>({
+    top: 0,
+    bottom: 0,
+    shoes: 0,
+    accessory: 0
+  });
   const { toast } = useToast();
   const outfitPreviewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkUser();
-    loadWardrobe();
+    generateRandomWardrobe();
   }, []);
 
   const checkUser = async () => {
@@ -44,33 +78,49 @@ const StyleOutfit = () => {
     setCurrentUser(user);
   };
 
-  const loadWardrobe = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const generateRandomWardrobe = () => {
+    const items: ClothingItem[] = [];
+    categories.forEach(category => {
+      placeholderImages[category as keyof typeof placeholderImages].forEach((url, index) => {
+        items.push({
+          id: `${category}-${index}`,
+          imageUrl: url,
+          category,
+          color: "Various",
+          originalImage: url
+        });
+      });
+    });
+    setWardrobe(items);
+  };
 
-      const { data, error } = await supabase
-        .from('clothing_items')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error loading wardrobe:', error);
-        return;
-      }
-
-      const formattedItems: ClothingItem[] = data?.map(item => ({
-        id: item.id,
-        imageUrl: item.image_url,
-        category: item.category,
-        color: item.color,
-        originalImage: item.original_image
-      })) || [];
-
-      setWardrobe(formattedItems);
-    } catch (error) {
-      console.error('Error loading wardrobe:', error);
+  const navigateCategory = (category: string, direction: 'prev' | 'next') => {
+    const categoryItems = placeholderImages[category as keyof typeof placeholderImages];
+    const currentIndex = categoryIndices[category];
+    let newIndex;
+    
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % categoryItems.length;
+    } else {
+      newIndex = (currentIndex - 1 + categoryItems.length) % categoryItems.length;
     }
+    
+    setCategoryIndices(prev => ({
+      ...prev,
+      [category]: newIndex
+    }));
+  };
+
+  const getCurrentItem = (category: string) => {
+    const categoryItems = placeholderImages[category as keyof typeof placeholderImages];
+    const index = categoryIndices[category];
+    return {
+      id: `${category}-${index}`,
+      imageUrl: categoryItems[index],
+      category,
+      color: "Various",
+      originalImage: categoryItems[index]
+    };
   };
 
   const handleDragStart = (item: ClothingItem) => {
@@ -125,46 +175,13 @@ const StyleOutfit = () => {
       return;
     }
 
-    try {
-      // Save outfit to database
-      const { data: outfit, error: outfitError } = await supabase
-        .from('outfits')
-        .insert({
-          name: outfitName,
-          user_id: currentUser.id
-        })
-        .select()
-        .single();
+    toast({
+      title: "Outfit saved",
+      description: "Your outfit has been saved successfully (demo mode).",
+    });
 
-      if (outfitError) throw outfitError;
-
-      // Save outfit items
-      const outfitItemsToSave = Object.values(outfitItems).map(item => ({
-        outfit_id: outfit.id,
-        clothing_item_id: item.id
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('outfit_items')
-        .insert(outfitItemsToSave);
-
-      if (itemsError) throw itemsError;
-
-      toast({
-        title: "Outfit saved",
-        description: "Your outfit has been saved successfully.",
-      });
-
-      // Reset form
-      setOutfitName("");
-      setOutfitItems({});
-    } catch (error) {
-      console.error('Error saving outfit:', error);
-      toast({
-        title: "Error saving outfit",
-        description: "Please try again.",
-      });
-    }
+    setOutfitName("");
+    setOutfitItems({});
   };
 
   const downloadOutfitImage = async () => {
@@ -188,10 +205,6 @@ const StyleOutfit = () => {
         description: "Please try again.",
       });
     }
-  };
-
-  const getItemsByCategory = (category: string) => {
-    return wardrobe.filter(item => item.category === category);
   };
 
   return (
@@ -240,39 +253,54 @@ const StyleOutfit = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Wardrobe Categories - Left Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Category Navigation - Left Side */}
           <div className="lg:col-span-2 space-y-6">
             {categories.map(category => {
-              const items = getItemsByCategory(category);
+              const currentItem = getCurrentItem(category);
               return (
                 <Card key={category} className="bg-white/80 backdrop-blur-sm border-navy-200">
                   <CardHeader className="pb-4">
                     <CardTitle className="text-lg font-bold text-navy-800 capitalize">
-                      {category} ({items.length})
+                      {category}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                      {items.map(item => (
-                        <div 
-                          key={item.id}
-                          className="relative group cursor-grab active:cursor-grabbing"
-                          draggable
-                          onDragStart={() => handleDragStart(item)}
-                        >
-                          <img 
-                            src={item.imageUrl} 
-                            alt={`${item.color} ${item.category}`}
-                            className="w-full h-20 object-cover rounded-md border border-navy-200 transition-transform group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-navy-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xs font-semibold text-center">
-                              Drag to Outfit
-                            </div>
+                    <div className="flex items-center justify-center space-x-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigateCategory(category, 'prev')}
+                        className="p-2"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </Button>
+                      
+                      <div 
+                        className="relative group cursor-grab active:cursor-grabbing"
+                        draggable
+                        onDragStart={() => handleDragStart(currentItem)}
+                      >
+                        <img 
+                          src={currentItem.imageUrl} 
+                          alt={`${currentItem.color} ${currentItem.category}`}
+                          className="w-32 h-40 object-cover rounded-md border border-navy-200 transition-transform group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-navy-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xs font-semibold text-center">
+                            Drag to Outfit
                           </div>
                         </div>
-                      ))}
+                      </div>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigateCategory(category, 'next')}
+                        className="p-2"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -281,44 +309,19 @@ const StyleOutfit = () => {
           </div>
 
           {/* Outfit Preview - Right Side */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-3">
             <Card className="bg-white/80 backdrop-blur-sm border-navy-200 sticky top-4">
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl font-bold text-navy-800">Outfit Preview</CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-8">
                 <div 
                   ref={outfitPreviewRef}
-                  className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 min-h-[400px] relative"
+                  className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-8 min-h-[500px] relative"
                 >
-                  {/* Accessory - Top Right */}
+                  {/* Top - Left side, larger */}
                   <div 
-                    className="absolute top-4 right-4 w-16 h-16 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, 'accessory')}
-                  >
-                    {outfitItems.accessory ? (
-                      <div className="relative group">
-                        <img 
-                          src={outfitItems.accessory.imageUrl} 
-                          alt="Accessory"
-                          className="w-full h-full object-cover rounded-md"
-                        />
-                        <button
-                          onClick={() => removeFromOutfit('accessory')}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-navy-500 text-center">Accessory</span>
-                    )}
-                  </div>
-
-                  {/* Top - Center */}
-                  <div 
-                    className="absolute top-8 left-1/2 -translate-x-1/2 w-24 h-32 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
+                    className="absolute top-8 left-8 w-40 h-48 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'top')}
                   >
@@ -341,9 +344,34 @@ const StyleOutfit = () => {
                     )}
                   </div>
 
-                  {/* Bottom - Center Lower */}
+                  {/* Accessory - Right of top, smaller, positioned higher */}
                   <div 
-                    className="absolute top-48 left-1/2 -translate-x-1/2 w-24 h-32 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
+                    className="absolute top-4 right-8 w-20 h-20 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, 'accessory')}
+                  >
+                    {outfitItems.accessory ? (
+                      <div className="relative group">
+                        <img 
+                          src={outfitItems.accessory.imageUrl} 
+                          alt="Accessory"
+                          className="w-full h-full object-cover rounded-md"
+                        />
+                        <button
+                          onClick={() => removeFromOutfit('accessory')}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-navy-500 text-center">Accessory</span>
+                    )}
+                  </div>
+
+                  {/* Bottom - Center right, large */}
+                  <div 
+                    className="absolute top-32 right-8 w-36 h-44 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'bottom')}
                   >
@@ -366,9 +394,9 @@ const StyleOutfit = () => {
                     )}
                   </div>
 
-                  {/* Shoes - Bottom Left */}
+                  {/* Shoes - Bottom left */}
                   <div 
-                    className="absolute bottom-4 left-4 w-16 h-12 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
+                    className="absolute bottom-8 left-8 w-24 h-16 border-2 border-dashed border-navy-300 rounded-lg flex items-center justify-center"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'shoes')}
                   >
