@@ -12,6 +12,7 @@ import re
 from remove_background import remove_background_white
 from prediction import predict_clothing_label
 
+
 # ---------------------------------------------------------------------------
 # directory setup
 # ---------------------------------------------------------------------------
