@@ -159,7 +159,7 @@ const Wardrobe = () => {
     }
   };
   
-  const handleSaveItem = () => {
+  const handleSaveItem = async () => {
     if (!pendingItem || !selectedColor) {
       toast({
         title: "Missing information",
@@ -168,26 +168,50 @@ const Wardrobe = () => {
       });
       return;
     }
-
-    const newItem: ClothingItem = {
-      id: Date.now().toString(),
-      imageUrl: pendingItem.imageUrl,
-      originalImage: pendingItem.originalImage,
-      category: pendingItem.category || 'shortsleeve',
-      color: selectedColor
-    };
-
-    const updatedItems = [...items, newItem];
-    saveItems(updatedItems);
-
-    setPendingItem(null);
-    setSelectedColor("");
-
-    toast({
-      title: "Item added!",
-      description: "Your clothing item has been added to your wardrobe.",
-    });
+  
+    try {
+      const res = await fetch("http://localhost:8000/save-clothing-item", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_url: pendingItem.imageUrl,
+          category: pendingItem.category || 'shortsleeve',
+          color: selectedColor
+        }),
+      });
+  
+      if (!res.ok) {
+        throw new Error("Failed to save item to CSV");
+      }
+  
+      // Optional: keep localStorage for offline use, if you want:
+      const newItem: ClothingItem = {
+        id: Date.now().toString(),
+        imageUrl: pendingItem.imageUrl,
+        originalImage: pendingItem.originalImage,
+        category: pendingItem.category || 'shortsleeve',
+        color: selectedColor
+      };
+      const updatedItems = [...items, newItem];
+      saveItems(updatedItems);
+  
+      setPendingItem(null);
+      setSelectedColor("");
+  
+      toast({
+        title: "Item added!",
+        description: "Your clothing item has been added and saved.",
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Error saving item",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
   };
+  
 
   const handleCategoryEdit = (itemId: string, category: string) => {
     setEditingCategory(itemId);
@@ -213,24 +237,23 @@ const Wardrobe = () => {
     if (!itemToDelete) return;
   
     try {
-      // 1. Request backend to delete the file
-      const response = await fetch("http://localhost:8000/delete-image", {
+      const response = await fetch("http://localhost:8000/delete-clothing-item", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_path: itemToDelete.imageUrl.replace("http://localhost:8000", "") })
+        body: JSON.stringify({ image_url: itemToDelete.imageUrl })
       });
   
       if (!response.ok) {
-        throw new Error("Failed to delete image from backend");
+        throw new Error("Failed to delete item from backend");
       }
   
-      // 2. Remove from frontend state/localStorage
+      // Remove from localStorage / frontend state
       const updatedItems = items.filter(item => item.id !== itemId);
       saveItems(updatedItems);
   
       toast({
         title: "Item deleted",
-        description: "Item has been removed from your wardrobe.",
+        description: "Item has been removed from your wardrobe and CSV.",
       });
     } catch (error) {
       console.error("Error deleting item:", error);
@@ -240,8 +263,7 @@ const Wardrobe = () => {
         variant: "destructive",
       });
     }
-  };
-  
+  };  
 
   const handleItemClick = (item: ClothingItem) => {
     setSelectedItem(item);

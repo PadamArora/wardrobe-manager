@@ -119,13 +119,28 @@ const StyleOutfit = () => {
         break;
     }
   
-    return images.map((url, index) => ({
-      id: `${currentCategory}-${index}`,
-      imageUrl: url,
-      category: currentCategory,
-      color: "Various",
-      originalImage: url,
-    }));
+    return images.map((url, index) => {
+      let transparentUrl = url;
+    
+      if (url.includes("/static/")) {
+        transparentUrl = url.replace("/static/", "/static/transparent/");
+      }
+    
+      if (transparentUrl.includes("_processed.jpg")) {
+        transparentUrl = transparentUrl.replace("_processed.jpg", "_transparent.png");
+      } else {
+        // Fallback: handle plain .jpg
+        transparentUrl = transparentUrl.replace(".jpg", ".png");
+      }
+    
+      return {
+        id: `${currentCategory}-${index}`,
+        imageUrl: transparentUrl, // ✅ Use transparent version
+        category: currentCategory,
+        color: "Various",
+        originalImage: url,        // ✅ Keep original white BG version
+      };
+    });    
   };
   
 
@@ -300,7 +315,7 @@ const StyleOutfit = () => {
                     <img 
                       src={item.imageUrl} 
                       alt={`${item.color} ${item.category}`}
-                      className="w-full h-64 object-cover rounded-md border border-navy-200 transition-transform duration-300 ease-in-out group-hover:scale-110"
+                      className="w-full h-[240px] object-contain rounded-md border border-navy-200 transition-transform duration-300 ease-in-out group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-navy-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xs font-semibold text-center">
@@ -327,7 +342,7 @@ const StyleOutfit = () => {
                 >
                   {/* Top - Left side, taller */}
                   <div 
-                    className="absolute top-[24px] left-[20px] w-72 h-72  rounded-lg flex items-center justify-center"
+                    className="absolute top-[45px] left-[40px] w-[270px] h-72  rounded-lg flex items-center justify-center"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'top')}
                   >
@@ -352,7 +367,7 @@ const StyleOutfit = () => {
 
                   {/* Accessory - Right of top, closer and larger */}
                   <div 
-                    className="absolute top-[72px] left-[328px] w-40 h-[20px] rounded-lg flex items-center justify-center"
+                    className="absolute top-[120px] left-[300px] w-40 h-[20px] rounded-lg flex items-center justify-center"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'accessory')}
                   >
@@ -377,7 +392,7 @@ const StyleOutfit = () => {
 
                   {/* Bottom - Under accessory, larger */}
                   <div 
-                    className="absolute top-[190px] left-[300px] w-[260px] h-[400px] rounded-lg"
+                    className="absolute top-[200px] left-[300px] w-[180px] h-[200px] rounded-lg"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'bottom')}
                   >
@@ -402,7 +417,7 @@ const StyleOutfit = () => {
 
                   {/* Shoes - Bottom left, larger */}
                   <div 
-                    className="absolute left-[120px] top-[360px] w-32 h-16 rounded-lg flex items-center justify-center"
+                    className="absolute left-[90px] top-[370px] w-[190px] h-[50px] rounded-lg flex items-center justify-center"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, 'shoes')}
                   >

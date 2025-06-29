@@ -167,7 +167,7 @@ const Dashboard = () => {
                 Style an Outfit
               </CardTitle>
               <CardDescription className="text-navy-600 text-sm">
-                Get AI-powered outfit recommendations
+                Design your perfect look with your wardrobe         
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
