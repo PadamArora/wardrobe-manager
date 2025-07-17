@@ -10,16 +10,16 @@ git clone https://github.com/PadamArora/wardrobe-manager.git
 # Step 2: Navigate to the project directory.
 cd wardrobe-manager
 
-
+# Setup backend
 cd backend
 uvicorn main:app --reload
 
+
+#Load Frontend
+Open new terminal window
+
 cd wardrobe-manager
-
-# Step 3: Install the necessary dependencies.
 npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ``'
 
